@@ -11,17 +11,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import os
+
+PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
 
 
-def generate_content(PROJECT_ID: str, MODEL_ID: str) -> object:
+def generate_content() -> object:
     # [START generativeaionvertexai_stream_multimodality_basic]
     import vertexai
 
     from vertexai.generative_models import GenerativeModel, Part
 
+    # TODO(developer): Update & un-comment the lines below
+    # PROJECT_ID = "your-project-id"
+
     vertexai.init(project=PROJECT_ID, location="us-central1")
 
-    model = GenerativeModel(MODEL_ID)
+    model = GenerativeModel("gemini-1.5-flash-002")
     responses = model.generate_content(
         [
             Part.from_uri(

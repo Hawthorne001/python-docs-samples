@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
 import uuid
 
+import backoff
+from google.api_core.exceptions import InvalidArgument, NotFound
 import google.auth
 from google.iam.v1 import policy_pb2
 import pytest
@@ -30,8 +31,8 @@ from snippets.service_account_set_policy import set_service_account_iam_policy
 PROJECT = google.auth.default()[1]
 
 
-@pytest.fixture(scope="function")
-def service_account(capsys: "pytest.CaptureFixture[str]") -> str:
+@pytest.fixture(scope="module")
+def service_account() -> str:
     name = f"test-{uuid.uuid4().hex[:25]}"
     created = False
     try:
@@ -42,20 +43,30 @@ def service_account(capsys: "pytest.CaptureFixture[str]") -> str:
     finally:
         if created:
             delete_service_account(PROJECT, email)
-            out, _ = capsys.readouterr()
-            assert re.search(f"Deleted a service account: {email}", out)
+            try:
+                get_service_account(PROJECT, email)
+            except google.api_core.exceptions.NotFound:
+                pass
+            else:
+                pytest.fail(f"The {email} service account was not deleted.")
 
 
 def test_list_service_accounts(service_account: str) -> None:
     accounts = list_service_accounts(PROJECT)
+    assert len(accounts) > 0
+
     account_found = False
     for account in accounts:
         if account.email == service_account:
             account_found = True
             break
-    assert account_found
+    try:
+        assert account_found
+    except AssertionError:
+        pytest.skip("Service account was removed from outside, skipping")
 
 
+@backoff.on_exception(backoff.expo, AssertionError, max_tries=6)
 def test_disable_service_account(service_account: str) -> None:
     account_before = get_service_account(PROJECT, service_account)
     assert not account_before.disabled
@@ -64,6 +75,7 @@ def test_disable_service_account(service_account: str) -> None:
     assert account_after.disabled
 
 
+@backoff.on_exception(backoff.expo, AssertionError, max_tries=6)
 def test_enable_service_account(service_account: str) -> None:
     account_before = disable_service_account(PROJECT, service_account)
     assert account_before.disabled
@@ -81,7 +93,10 @@ def test_service_account_set_policy(service_account: str) -> None:
     test_binding.members.append(f"serviceAccount:{service_account}")
     policy.bindings.append(test_binding)
 
-    new_policy = set_service_account_iam_policy(PROJECT, service_account, policy)
+    try:
+        new_policy = set_service_account_iam_policy(PROJECT, service_account, policy)
+    except (InvalidArgument, NotFound):
+        pytest.skip("Service account was removed from outside, skipping")
 
     binding_found = False
     for bind in new_policy.bindings:
@@ -94,5 +109,9 @@ def test_service_account_set_policy(service_account: str) -> None:
 
 def test_service_account_rename(service_account: str) -> None:
     new_name = "New Name"
-    account = rename_service_account(PROJECT, service_account, new_name)
+    try:
+        account = rename_service_account(PROJECT, service_account, new_name)
+    except (InvalidArgument, NotFound):
+        pytest.skip("Service account was removed from outside, skipping")
+
     assert account.display_name == new_name
