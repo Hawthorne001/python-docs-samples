@@ -26,7 +26,7 @@
 # but does not include some preinstalled libraries, like google-cloud-debugger.
 # To use a standard image, use apache/beam_python3.11_sdk:2.54.0 instead.
 # Use consistent versions of Python interpreter in the project.
-FROM python:3.11-slim
+FROM python:3.13-slim
 
 # Copy SDK entrypoint binary from Apache Beam image, which makes it possible to
 # use the image as SDK container image. If you explicitly depend on
