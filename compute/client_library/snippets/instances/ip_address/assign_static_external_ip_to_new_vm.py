@@ -19,7 +19,7 @@
 # directory and apply your changes there.
 
 
-# [START compute_instances_create_from_image]
+# [START compute_ip_address_assign_static_new_vm]
 from __future__ import annotations
 
 import re
@@ -285,7 +285,7 @@ def assign_static_external_ip_to_new_vm(
     Returns:
         Instance object.
     """
-    newest_debian = get_image_from_family(project="debian-cloud", family="debian-10")
+    newest_debian = get_image_from_family(project="debian-cloud", family="debian-12")
     disk_type = f"zones/{zone}/diskTypes/pd-standard"
     disks = [disk_from_image(disk_type, 10, True, newest_debian.self_link, True)]
     instance = create_instance(
@@ -299,7 +299,7 @@ def assign_static_external_ip_to_new_vm(
     return instance
 
 
-# [END compute_instances_create_from_image]
+# [END compute_ip_address_assign_static_new_vm]
 
 if __name__ == "__main__":
     import google.auth

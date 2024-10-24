@@ -12,8 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 
-def generate_content(PROJECT_ID: str, MODEL_ID: str) -> object:
+PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
+
+
+def generate_content() -> object:
     # [START generativeaionvertexai_non_stream_text_basic]
     import vertexai
 
@@ -21,10 +25,14 @@ def generate_content(PROJECT_ID: str, MODEL_ID: str) -> object:
 
     vertexai.init(project=PROJECT_ID, location="us-central1")
 
-    model = GenerativeModel(MODEL_ID)
+    model = GenerativeModel("gemini-1.5-flash-002")
     response = model.generate_content("Write a story about a magic backpack.")
 
-    print(response)
+    print(response.text)
     # [END generativeaionvertexai_non_stream_text_basic]
 
     return response
+
+
+if __name__ == "__main__":
+    generate_content()
